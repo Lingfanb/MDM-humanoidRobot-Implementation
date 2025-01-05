@@ -26,8 +26,8 @@ rm -r save/"your file name"
 ## Processing the trained model
 For the already trained model, 
 
-1. Move it outside the folder
-2. We need to try it through generate.py
+1. We need to try it through generate.py
+2. Move it outside the folder
 3. Upload to onedrive
 4. Delete the model from the file 
 
@@ -36,8 +36,8 @@ mv MDM-humanoidRobot-Implementation/dataset/{HumanAct12Poses,HumanML3D,KIT-ML,ue
 mv dataset/{HumanAct12Poses,HumanML3D,KIT-ML,uestc} MDM-humanoidRobot-Implementation/dataset/
 ```
 
-Move ur model to outside the folder
+Move ur model to outside the folder and storage the model to the cloud
 ```shell
-
-
+mv MDM-humanoidRobot-Implementation/save/humanml_trans_enc_512 model_storage
+rclone copy model_storage onedrive:/Documents/model_storage --progress
 ```
