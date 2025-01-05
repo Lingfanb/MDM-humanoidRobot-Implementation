@@ -39,5 +39,6 @@ mv dataset/{HumanAct12Poses,HumanML3D,KIT-ML,uestc} MDM-humanoidRobot-Implementa
 Move ur model to outside the folder and storage the model to the cloud
 ```shell
 mv MDM-humanoidRobot-Implementation/save/humanml_trans_enc_512 model_storage
+mv model_storage/humanml_trans_enc_512 MDM-humanoidRobot-Implementation/save/ 
 rclone copy model_storage onedrive:/Documents/model_storage --progress
 ```
