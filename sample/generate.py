@@ -12,7 +12,7 @@ from utils.model_util import create_model_and_diffusion, load_model_wo_clip
 from utils import dist_util
 from model.cfg_sampler import ClassifierFreeSampleModel
 from data_loaders.get_data import get_dataset_loader
-from data_loaders.humanml.scripts.motion_process import recover_from_ric
+from data_loaders.humanml.scripts.motion_process import recover_from_ric, recover_from_rot
 import data_loaders.humanml.utils.paramUtil as paramUtil
 from data_loaders.humanml.utils.plot_script import plot_3d_motion
 import shutil
@@ -101,6 +101,7 @@ def main():
     all_motions = []
     all_lengths = []
     all_text = []
+    raw_data = []
 
     for rep_i in range(args.num_repetitions):
         print(f'### Sampling [repetitions #{rep_i}]')
@@ -111,6 +112,7 @@ def main():
 
         sample_fn = diffusion.p_sample_loop
 
+        # this sample shape: [10,263,1,196]
         sample = sample_fn(
             model,
             # (args.batch_size, model.njoints, model.nfeats, n_frames),  # BUG FIX - this one caused a mismatch between training and inference
@@ -124,36 +126,51 @@ def main():
             noise=None,
             const_noise=False,
         )
+        
 
         # Recover XYZ *positions* from HumanML3D vector representation
         if model.data_rep == 'hml_vec':
             n_joints = 22 if sample.shape[1] == 263 else 21
+            # [10, 1, 196, 263]
             sample = data.dataset.t2m_dataset.inv_transform(sample.cpu().permute(0, 2, 3, 1)).float()
+            # [10,196, 22, 6]
+            cont6d_params = recover_from_rot(sample,n_joints)
+            # print("whats the size of cont6d?:",cont6d_params.shape)
+            # [10, 1, 196, 22, 3]
             sample = recover_from_ric(sample, n_joints)
+            # [10, 22, 3, 196]
             sample = sample.view(-1, *sample.shape[2:]).permute(0, 2, 3, 1)
+            # print("Whats the size of sample?", sample.shape)
 
         rot2xyz_pose_rep = 'xyz' if model.data_rep in ['xyz', 'hml_vec'] else model.data_rep
         rot2xyz_mask = None if rot2xyz_pose_rep == 'xyz' else model_kwargs['y']['mask'].reshape(args.batch_size, n_frames).bool()
+        # this sample shape:[10, 22, 3, 196]
         sample = model.rot2xyz(x=sample, mask=rot2xyz_mask, pose_rep=rot2xyz_pose_rep, glob=True, translation=True,
                                jointstype='smpl', vertstrans=True, betas=None, beta=0, glob_rot=None,
                                get_rotations_back=False)
-
         if args.unconstrained:
             all_text += ['unconstrained'] * args.num_samples
         else:
             text_key = 'text' if 'text' in model_kwargs['y'] else 'action_text'
             all_text += model_kwargs['y'][text_key]
 
+        raw_data.append(cont6d_params.cpu().numpy())
         all_motions.append(sample.cpu().numpy())
         all_lengths.append(model_kwargs['y']['lengths'].cpu().numpy())
-
+        
         print(f"created {len(all_motions) * args.batch_size} samples")
 
-
+    # (30, 196, 22, 6)
+    raw_data = np.concatenate(raw_data, axis=0)
+    raw_data = raw_data[:total_num_samples]
+    # (30, 22, 3, 196)
     all_motions = np.concatenate(all_motions, axis=0)
     all_motions = all_motions[:total_num_samples]  # [bs, njoints, 6, seqlen]
     all_text = all_text[:total_num_samples]
     all_lengths = np.concatenate(all_lengths, axis=0)[:total_num_samples]
+
+    print('whats the final shape fo raw_data',raw_data.shape)
+    print('whats the final shape fo all_motions',all_motions.shape)
 
     if os.path.exists(out_path):
         shutil.rmtree(out_path)
@@ -162,7 +179,7 @@ def main():
     npy_path = os.path.join(out_path, 'results.npy')
     print(f"saving results file to [{npy_path}]")
     np.save(npy_path,
-            {'motion': all_motions, 'text': all_text, 'lengths': all_lengths,
+            {'motion': all_motions, 'text': all_text, 'lengths': all_lengths, 'raw_data': raw_data,
              'num_samples': args.num_samples, 'num_repetitions': args.num_repetitions})
     with open(npy_path.replace('.npy', '.txt'), 'w') as fw:
         fw.write('\n'.join(all_text))

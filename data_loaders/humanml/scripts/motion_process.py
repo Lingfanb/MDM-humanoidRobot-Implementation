@@ -380,8 +380,9 @@ def recover_root_rot_pos(data):
     r_pos[..., 1] = data[..., 3]
     return r_rot_quat, r_pos
 
-
-def recover_from_rot(data, joints_num, skeleton):
+# notice here can directly get the position from, but we need cont6d data and transfer them to euler angle
+# def recover_from_rot(data, joints_num, skeleton):
+def recover_from_rot(data, joints_num):
     r_rot_quat, r_pos = recover_root_rot_pos(data)
 
     r_rot_cont6d = quaternion_to_cont6d(r_rot_quat)
@@ -389,13 +390,19 @@ def recover_from_rot(data, joints_num, skeleton):
     start_indx = 1 + 2 + 1 + (joints_num - 1) * 3
     end_indx = start_indx + (joints_num - 1) * 6
     cont6d_params = data[..., start_indx:end_indx]
-    #     print(r_rot_cont6d.shape, cont6d_params.shape, r_pos.shape)
+
+    # print(r_rot_cont6d.shape, cont6d_params.shape, r_pos.shape)
+    # [10, 1, 196, 132]
     cont6d_params = torch.cat([r_rot_cont6d, cont6d_params], dim=-1)
-    cont6d_params = cont6d_params.view(-1, joints_num, 6)
+    # print('After cont6d cat: ',cont6d_params.shape)
 
-    positions = skeleton.forward_kinematics_cont6d(cont6d_params, r_pos)
+    # cont6d_params = cont6d_params.view(-1, joints_num, 6)
+    cont6d_params = cont6d_params.view(cont6d_params.size(0), cont6d_params.size(2), 22, 6)
+    # cont6d_params = cont6d_params.view(cont6d_params.size(0), cont6d_params.size(1), cont6d_params.size(2), joints_num, 6)
 
-    return positions
+    # positions = skeleton.forward_kinematics_cont6d(cont6d_params, r_pos)
+
+    return cont6d_params
 
 def recover_rot(data):
     # dataset [bs, seqlen, 263/251] HumanML/KIT
