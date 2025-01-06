@@ -31,14 +31,22 @@ For the already trained model,
 3. Upload to onedrive
 4. Delete the model from the file 
 
+Before push any commits to the Github
 ```shell
 mv MDM-humanoidRobot-Implementation/dataset/{HumanAct12Poses,HumanML3D,KIT-ML,uestc} dataset
-mv dataset/{HumanAct12Poses,HumanML3D,KIT-ML,uestc} MDM-humanoidRobot-Implementation/dataset/
+mv MDM-humanoidRobot-Implementation/save/humanml_trans_enc_512 model_storage
+mv MDM-humanoidRobot-Implementation/joints ./
 ```
 
-Move ur model to outside the folder and storage the model to the cloud
+Before running any MDM codes 
 ```shell
-mv MDM-humanoidRobot-Implementation/save/humanml_trans_enc_512 model_storage
-mv model_storage/humanml_trans_enc_512 MDM-humanoidRobot-Implementation/save/ 
+mv model_storage/humanml_trans_enc_512 MDM-humanoidRobot-Implementation/save/
+mv dataset/{HumanAct12Poses,HumanML3D,KIT-ML,uestc} MDM-humanoidRobot-Implementation/dataset/
+mv joints/ MDM-humanoidRobot-Implementation/
+
+```
+
+## upload model to the onedriive
+```shell
 rclone copy model_storage onedrive:/Documents/model_storage --progress
 ```
