@@ -33,6 +33,7 @@ For the already trained model,
 
 Before push any commits to the Github
 ```shell
+cd /home/lingfanb/Lingfan_Research_UCL/
 mv MDM-humanoidRobot-Implementation/dataset/{HumanAct12Poses,HumanML3D,KIT-ML,uestc} dataset
 mv MDM-humanoidRobot-Implementation/save/humanml_trans_enc_512 model_storage
 mv MDM-humanoidRobot-Implementation/joints ./
@@ -40,6 +41,7 @@ mv MDM-humanoidRobot-Implementation/joints ./
 
 Before running any MDM codes 
 ```shell
+cd /home/lingfanb/Lingfan_Research_UCL/
 mv model_storage/humanml_trans_enc_512 MDM-humanoidRobot-Implementation/save/
 mv dataset/{HumanAct12Poses,HumanML3D,KIT-ML,uestc} MDM-humanoidRobot-Implementation/dataset/
 mv joints/ MDM-humanoidRobot-Implementation/
